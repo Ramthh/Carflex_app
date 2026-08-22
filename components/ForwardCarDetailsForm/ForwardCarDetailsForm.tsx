@@ -28,6 +28,10 @@ export default function ForwardCarDetailsForm({
   const [damageCondition, setDamageCondition] = useState("");
   const [damageLocation, setDamageLocation] = useState("");
 
+  const [streetAddress, setStreetAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [province, setProvince] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (
@@ -74,6 +78,11 @@ export default function ForwardCarDetailsForm({
           damageCondition,
           damageLocation,
           adLink: carDetails.ad_link,
+          streetAddress,
+          city,
+          province,
+          postalCode,
+          sellerPhone: carDetails.seller_phone,
         }),
       });
       if (!res.ok) {
@@ -170,6 +179,47 @@ export default function ForwardCarDetailsForm({
           placeholder="Enter Pickup Location"
           value={pickLocation}
           onChange={(e) => setPickLocation(e.target.value)}
+          required
+        />
+      </div>
+      <div className="flex justify-between items-center gap-4">
+        <label className=" flex-2">Street Address</label>
+        <input
+          type="text"
+          className="p-2 border border-gray-300 rounded-lg flex-5"
+          placeholder="Enter Street Address"
+          value={streetAddress}
+          onChange={(e) => setStreetAddress(e.target.value)}
+        />
+      </div>
+      <div className="flex justify-between items-center gap-4">
+        <label className=" flex-2">City</label>
+        <input
+          type="text"
+          className="p-2 border border-gray-300 rounded-lg flex-5"
+          placeholder="Enter City"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+        />
+      </div>
+      <div className="flex justify-between items-center gap-4">
+        <label className=" flex-2">Province</label>
+        <input
+          type="text"
+          className="p-2 border border-gray-300 rounded-lg flex-5"
+          placeholder="Enter Province"
+          value={province}
+          onChange={(e) => setProvince(e.target.value)}
+        />
+      </div>
+      <div className="flex justify-between items-center gap-4">
+        <label className=" flex-2">Postal Code</label>
+        <input
+          type="text"
+          className="p-2 border border-gray-300 rounded-lg flex-5"
+          placeholder="Enter Postal Code"
+          value={postalCode}
+          onChange={(e) => setPostalCode(e.target.value)}
           required
         />
       </div>

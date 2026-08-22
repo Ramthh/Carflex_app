@@ -31,12 +31,16 @@ export async function POST(req: Request) {
         damage,
         damage_condition,
         damage_location,
-       
+        seller_phone,
+        street_address,
+        city,
+        province,
+        postal_code,
       updated_at, 
       ad_link
         
          )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
       `,
       [
         body.pickDate,
@@ -55,6 +59,11 @@ export async function POST(req: Request) {
         body.damage,
         body.damageCondition,
         body.damageLocation,
+        body.sellerPhone,
+        body.streetAddress,
+        body.city,
+        body.province,
+        body.postalCode,
         new Date(),
         body.adLink,
       ],
