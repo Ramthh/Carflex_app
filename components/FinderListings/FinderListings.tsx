@@ -17,7 +17,7 @@ function EstimateBadge({label,estimate,ask}:{label:string;estimate?:Estimate;ask
  const status=finderPriceStatus(ask,estimate);
  const colors={Steal:'bg-green-700 text-white',Good:'bg-green-100 text-green-900',Potential:'bg-yellow-100 text-yellow-900',Entertain:'bg-red-100 text-red-800',Unknown:'bg-slate-100 text-slate-700'};
  const available=estimate?.status==='available'&&Number.isFinite(estimate.amount)&&estimate.amount!>0;
- return <span className="inline-flex items-center gap-1 text-xs" title={`${status} based on ${label} compared with the asking price`}><span className={`rounded px-2 py-1 ${colors[status]}`}>{label} {available?money(estimate!.amount):'—'}</span><strong className="rounded bg-black px-2 py-1 text-white">{status}</strong></span>;
+ return <span className="inline-flex items-center gap-1 text-xs" title={`${status} based on ${label} compared with the asking price`}><span className={`rounded px-2 py-1 ${colors[status]}`}>{label} {available?money(estimate!.amount):'—'}</span><strong className={`rounded border-2 border-black px-2 py-0.5 ${colors[status]}`}>{status}</strong></span>;
 }
 const sellerNames:Record<string,string>={dealer:'Dealer',safe:'Safe',avoid:'Avoid',unknown:'Unknown'};
 const sellerLabel=(car:Car)=>(sellerNames[car.reviewCategory||'unknown']||'Unknown')+(car.otherSellers?' · Other':'');
