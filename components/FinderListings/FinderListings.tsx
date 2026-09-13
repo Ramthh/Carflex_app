@@ -4,7 +4,7 @@ import {ArrowUpRight,ChevronLeft,ChevronRight,LayoutGrid,List,MapPin,RefreshCw,S
 import styles from './FinderListings.module.css';
 
 type Estimate={amount?:number;status?:string};
-type Car={id:string;title:string;price?:number;priceCurrency?:string;year?:number;mileage?:number;location?:string;imageUrl?:string;url?:string;postedAt?:string;publicDescription?:string;priceEstimate?:Estimate;oldPriceEstimate?:Estimate};
+type Car={id:string;title:string;price?:number;priceCurrency?:string;year?:number;mileage?:number;location?:string;imageUrl?:string;url?:string;postedAt?:string;publicDescription?:string;detailCoverage?:{mileage?:string;description?:string};priceEstimate?:Estimate;oldPriceEstimate?:Estimate};
 type Page={items:Car[];total:number;nextOffset:number|null;generatedAt:string};
 type View='grid'|'list';
 const VIEW_STORAGE_KEY='carflex-finder-view';
@@ -86,9 +86,9 @@ export default function FinderListings(){
      <div className={`${styles.photo} relative aspect-[16/9] bg-slate-100`}>{safeLink(car.imageUrl)?<img src={safeLink(car.imageUrl)} alt={car.title} loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-cover"/>:<div className="flex h-full items-center justify-center text-slate-400">Photo unavailable</div>}<span className="absolute bottom-3 left-3 rounded bg-white px-2 py-1 text-xs text-slate-700">Unknown</span>{safeLink(car.url)&&<a href={safeLink(car.url)} target="_blank" rel="noopener noreferrer" className={styles.photoLink} aria-label={`View ${car.title} on Facebook (opens in a new tab)`} title="View ad on Facebook (opens in a new tab)"/>}</div>
      <div className={`${styles.cardBody} p-4`}><div className={styles.carHeading}><h2 className="text-lg font-semibold text-slate-900">{car.title}</h2><p className={`${styles.price} mt-2 text-2xl font-bold text-slate-900`}>{money(car.price)} <span className="text-xs font-normal text-slate-500">CAD</span></p></div>
       <div className="my-3 flex flex-wrap gap-2"><EstimateBadge label="New Est." estimate={car.priceEstimate} ask={car.price}/><EstimateBadge label="Old Est." estimate={car.oldPriceEstimate} ask={car.price}/></div>
-      <p className="text-sm text-slate-500">{car.mileage==null?'Mileage not listed':`${car.mileage.toLocaleString('en-CA')} km`}</p>
+      <p className="text-sm text-slate-500">{car.mileage==null?(car.detailCoverage?.mileage==='not-found'?'Mileage not found on the ad':car.detailCoverage?.mileage==='unavailable'?'Mileage unavailable':'Mileage pending'):`${car.mileage.toLocaleString('en-CA')} km`}</p>
       <div className={`${styles.carFooter} mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-sm`}><span className={`${styles.location} flex items-center gap-1 text-slate-500`}><MapPin size={14}/>{car.location||'Location not listed'}</span>{safeLink(car.url)&&<a href={safeLink(car.url)} target="_blank" rel="noopener noreferrer" className="flex shrink-0 items-center gap-1 font-medium text-teal-700">View ad<ArrowUpRight size={16}/></a>}</div>
-      {car.publicDescription&&<details className={`${styles.description} mt-3 text-sm`}><summary className="cursor-pointer text-teal-700">Description</summary><p className="mt-2 whitespace-pre-wrap text-slate-600">{car.publicDescription}</p></details>}
+      {car.publicDescription?<details className={`${styles.description} mt-3 text-sm`}><summary className="cursor-pointer text-teal-700">Description{car.detailCoverage?.description==='truncated'?' · More details pending':''}</summary><p className="mt-2 whitespace-pre-wrap text-slate-600">{car.publicDescription}</p></details>:<p className="mt-3 text-sm text-slate-500">{car.detailCoverage?.description==='not-found'?'No description found on the ad':car.detailCoverage?.description==='unavailable'?'Description unavailable':'Description pending'}</p>}
      </div>
     </article>)}
    </div>}
