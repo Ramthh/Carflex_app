@@ -40,6 +40,9 @@
 .carHeading h2, .description, .location { overflow-wrap: anywhere; }
 .location svg { flex-shrink: 0; }
 .carFooter { flex-wrap: wrap; }
+.photoLink { position: absolute; inset: 0; cursor: pointer; }
+.photoLink:hover { background: rgb(15 23 42 / 5%); }
+.photoLink:focus-visible { outline: 3px solid #0d9488; outline-offset: -3px; }
 
 .list {
   display: grid;
