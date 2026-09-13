@@ -63,7 +63,7 @@ export default function FinderListings(){
    return()=>cancelAnimationFrame(frame);
   }
  },[page]);
- useEffect(()=>{const timer=setInterval(()=>{if(document.visibilityState==='visible')setRevision(n=>n+1);},60000);return()=>clearInterval(timer);},[]);
+ useEffect(()=>{const timer=setInterval(()=>{if(document.visibilityState==='visible')setRevision(n=>n+1);},10000);return()=>clearInterval(timer);},[]);
  return <section className={`${styles.finder} mx-auto w-full max-w-7xl px-4 py-6 md:px-7`}>
   <header className="mb-5">
    <div className="flex flex-wrap items-center justify-between gap-4">
