@@ -54,7 +54,13 @@ export default function FinderListings(){
   const anchor=scrollAnchor.current;scrollAnchor.current=null;
   if(!anchor)return;
   const card=Array.from(resultsRef.current?.querySelectorAll<HTMLElement>('[data-car-id]')||[]).find(item=>item.dataset.carId===anchor.id);
-  if(card&&anchor.scroller.isConnected)anchor.scroller.scrollTop+=card.getBoundingClientRect().top-anchor.top;
+  if(card&&anchor.scroller.isConnected){
+   const target=anchor.scroller.scrollTop+card.getBoundingClientRect().top-anchor.top;
+   anchor.scroller.scrollTop=target;
+   // Keep the correction after the browser finishes its layout/focus work.
+   const frame=requestAnimationFrame(()=>{if(anchor.scroller.isConnected)anchor.scroller.scrollTop=target;});
+   return()=>cancelAnimationFrame(frame);
+  }
  },[page]);
  useEffect(()=>{const timer=setInterval(()=>{if(document.visibilityState==='visible')setRevision(n=>n+1);},60000);return()=>clearInterval(timer);},[]);
  return <section className={`${styles.finder} mx-auto w-full max-w-7xl px-4 py-6 md:px-7`}>

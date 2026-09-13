@@ -1,6 +1,7 @@
 .finder {
   container-type: inline-size;
   min-width: 0;
+  overflow-anchor: none;
 }
 
 .actions {
