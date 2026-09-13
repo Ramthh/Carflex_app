@@ -68,7 +68,15 @@ export default function FinderListings(){
    return()=>cancelAnimationFrame(frame);
   }
  },[page]);
- useEffect(()=>{const timer=setInterval(()=>{if(document.visibilityState==='visible')setRevision(n=>n+1);},10000);return()=>clearInterval(timer);},[]);
+ useEffect(()=>{
+  if(loading)return;
+  // Start the next check only after this one finishes, so a slow connection
+  // cannot keep aborting requests before the new cars reach the screen.
+  const refresh=()=>{if(document.visibilityState==='visible')setRevision(n=>n+1);};
+  const timer=setTimeout(refresh,error?10000:1000);
+  document.addEventListener('visibilitychange',refresh);
+  return()=>{clearTimeout(timer);document.removeEventListener('visibilitychange',refresh);};
+ },[loading,offset,revision,error]);
  useEffect(()=>{const tick=()=>setNow(Date.now()),timer=setInterval(()=>{if(document.visibilityState==='visible')tick();},1000);document.addEventListener('visibilitychange',tick);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',tick);};},[]);
  return <section className={`${styles.finder} mx-auto w-full max-w-7xl px-4 py-6 md:px-7`}>
   <header className="mb-5">

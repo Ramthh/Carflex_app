@@ -2,7 +2,7 @@ import {NextResponse} from 'next/server';
 import {getServerSession} from 'next-auth';
 import {authOptions} from '@/app/api/auth/[...nextauth]/route';
 import db from '@/lib/db.postgres';
-import {readFinderFeed} from '@/lib/finder-feed.mjs';
+import {readLiveFinderFeed} from '@/lib/finder-feed.mjs';
 
 export const dynamic='force-dynamic';
 export async function GET(request:Request){
@@ -15,7 +15,7 @@ export async function GET(request:Request){
   const params=new URL(request.url).searchParams;
   if([...params.keys()].some(name=>name!=='offset')||params.getAll('offset').length>1)return reply({error:'Only Finder page selection is supported.'},400);
   const raw=params.get('offset')??'0';if(!/^\d{1,8}$/.test(raw))return reply({error:'Invalid Finder page.'},400);
-  const result=await readFinderFeed({key:process.env.CARFLEX_FINDER_API_KEY,offset:Number(raw)});
+  const result=await readLiveFinderFeed({key:process.env.CARFLEX_FINDER_API_KEY,offset:Number(raw)});
   return reply(result.body,result.status);
  }catch{return reply({error:'Carflex Finder is temporarily unavailable.'},503);}
 }
