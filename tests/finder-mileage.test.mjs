@@ -9,7 +9,7 @@ test('Finder shows observed title/description mileage before the raw field is ba
 });
 test('conflicts and missing odometers do not become guessed mileage',()=>{
  assert.equal(finderMileageLabel({mileage:100000,valuationEvidence:{mileage:{status:'conflict',valueKm:null}}}),'Mileage needs confirmation');
- assert.equal(finderMileageLabel({mileage:100000,valuationEvidence:{mileage:{status:'missing',valueKm:null}}}),'Mileage pending');
+ assert.equal(finderMileageLabel({mileage:100000,valuationEvidence:{mileage:{status:'missing',valueKm:null}}}),'Mileage not yet collected');
  assert.equal(finderMileageLabel({priceEstimate:{mileage:100000},detailCoverage:{mileage:'not-found'}}),'Mileage not found on the ad');
  assert.equal(finderMileageLabel({detailCoverage:{mileage:'unavailable'}}),'Mileage unavailable');
  assert.equal(finderMileageLabel({mileage:42000}),'42,000 km');
