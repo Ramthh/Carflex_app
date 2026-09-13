@@ -21,6 +21,18 @@ test('failed upstream responses are not cached and page cache growth is bounded'
  calls=0;const reader=createFinderFeedReader({maxEntries:2,now:()=>0,read:async()=>{calls++;return {status:200};}});
  for(const offset of [0,24,48,0])await reader({key,offset});assert.equal(calls,4);
 });
+
+test('slow reads stay shared while pending but cannot make the next one-second check stale',async()=>{
+ let time=0,calls=0,resolve;
+ const reader=createFinderFeedReader({now:()=>time,read:async()=>{calls++;return new Promise(done=>{resolve=done;});}});
+ const first=reader({key});await Promise.resolve();assert.equal(calls,1);
+ time=800;const waiting=reader({key});await Promise.resolve();assert.equal(calls,1,'An expired freshness window must not duplicate an unfinished request');
+ time=900;resolve({status:200,body:{...page,generatedAt:'first'}});assert.deepEqual(await first,await waiting);
+ time=1000;const next=reader({key});await Promise.resolve();assert.equal(calls,2,'A slow response must not add another freshness window before the next poll');
+ time=1500;resolve({status:200,body:{...page,generatedAt:'second'}});await next;
+ time=1749;assert.equal((await reader({key})).body.generatedAt,'second');assert.equal(calls,2);
+ time=1750;const expired=reader({key});await Promise.resolve();assert.equal(calls,3);resolve({status:200,body:page});await expired;
+});
 test('credentials stay in server headers, endpoint and filters cannot be overridden',async()=>{
  let request;const result=await readFinderFeed({key,fetcher:async(url,options)=>{request={url,options};return Response.json(page);}});
  assert.equal(result.status,200);assert.equal(request.options.headers['X-API-Key'],key);assert.equal(request.options.cache,'no-store');assert.equal(request.options.redirect,'error');assert.ok(!request.url.includes(key));assert.equal(new URL(request.url).hostname,'finder.carflexplus.ca');
