@@ -36,6 +36,11 @@ export const navByRole: Record<Role, NavBox[]> = {
         { id: "autotrader", href: "/listings/autotrader", label: "Autotrader" },
         { id: "kijiji", href: "/listings/kijiji", label: "Kijiji" },
         {
+          id: "finder",
+          href: "/listings/finder",
+          label: "Carflex Finder",
+        },
+        {
           id: "marketplace",
           href: "/listings/marketplace",
           label: "Swoopa Marketplace",
@@ -89,6 +94,11 @@ export const navByRole: Record<Role, NavBox[]> = {
         { id: "all", href: "/listings", label: "All" },
         { id: "autotrader", href: "/listings/autotrader", label: "Autotrader" },
         { id: "kijiji", href: "/listings/kijiji", label: "Kijiji" },
+        {
+          id: "finder",
+          href: "/listings/finder",
+          label: "Carflex Finder",
+        },
         {
           id: "marketplace",
           href: "/listings/marketplace",
@@ -144,6 +154,11 @@ export const navByRole: Record<Role, NavBox[]> = {
         { id: "autotrader", href: "/listings/autotrader", label: "Autotrader" },
         { id: "kijiji", href: "/listings/kijiji", label: "Kijiji" },
         {
+          id: "finder",
+          href: "/listings/finder",
+          label: "Carflex Finder",
+        },
+        {
           id: "marketplace",
           href: "/listings/marketplace",
           label: "Swoopa Marketplace",
@@ -184,6 +199,11 @@ export const navByRole: Record<Role, NavBox[]> = {
         { id: "autotrader", href: "/listings/autotrader", label: "Autotrader" },
         { id: "kijiji", href: "/listings/kijiji", label: "Kijiji" },
         {
+          id: "finder",
+          href: "/listings/finder",
+          label: "Carflex Finder",
+        },
+        {
           id: "marketplace",
           href: "/listings/marketplace",
           label: "Swoopa Marketplace",
@@ -213,6 +233,11 @@ export const navByRole: Record<Role, NavBox[]> = {
         { id: "all", href: "/listings", label: "All" },
         { id: "autotrader", href: "/listings/autotrader", label: "Autotrader" },
         { id: "kijiji", href: "/listings/kijiji", label: "Kijiji" },
+        {
+          id: "finder",
+          href: "/listings/finder",
+          label: "Carflex Finder",
+        },
         {
           id: "marketplace",
           href: "/listings/marketplace",

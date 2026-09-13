@@ -103,7 +103,7 @@ export default function Sidebar({
                               isActive={active === item.label}
                               className={`text-left w-full px-4 py-3 rounded-lg font-medium text-sm transition-colors`}
                             >
-                              {item.label}
+                              {item.id === "finder" ? <span className="finder-nav-label"><img src="/Logo.png" alt="" className="finder-nav-logo"/><span>{item.label}</span><img src="/carflex-finder-new.png" alt="New feature" className="finder-new-feature"/></span> : item.label}
                             </NavButton>
                           );
                         })}
