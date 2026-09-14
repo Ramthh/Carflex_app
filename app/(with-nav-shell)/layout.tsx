@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getToken } from "next-auth/jwt";
 import { validateToken } from "@/lib/auth";
+// Signed-in pages depend on the current session and live inventory. Do not
+// fetch that inventory while building the deployment.
+export const dynamic = "force-dynamic";
 export default async function RootLayout({
   children,
 }: {
