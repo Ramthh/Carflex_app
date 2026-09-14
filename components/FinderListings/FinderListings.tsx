@@ -6,7 +6,7 @@ import {finderMileageLabel} from '@/lib/finder-mileage.mjs';
 import {finderPriceStatus} from '@/lib/finder-price-status.mjs';
 import {finderTimeAgo} from '@/lib/finder-time.mjs';
 
-type Estimate={amount?:number;status?:string};
+type Estimate={amount?:number;status?:string;refreshing?:boolean};
 type Car={id:string;title:string;price?:number;priceCurrency?:string;year?:number;mileage?:number;location?:string;imageUrl?:string;url?:string;postedAt?:string;discoveredAt?:string;reviewCategory?:string;otherSellers?:boolean;publicDescription?:string;detailCoverage?:{mileage?:string;description?:string};valuationEvidence?:{mileage?:{status?:string;valueKm?:number|null}};priceEstimate?:Estimate;oldPriceEstimate?:Estimate};
 type Page={items:Car[];total:number;nextOffset:number|null;generatedAt:string};
 type View='grid'|'list';
@@ -17,7 +17,8 @@ function EstimateBadge({label,estimate,ask}:{label:string;estimate?:Estimate;ask
  const status=finderPriceStatus(ask,estimate);
  const colors={Steal:'bg-green-700 text-white',Good:'bg-green-100 text-green-900',Potential:'bg-yellow-100 text-yellow-900',Entertain:'bg-red-100 text-red-800',Unknown:'bg-slate-100 text-slate-700'};
  const available=estimate?.status==='available'&&Number.isFinite(estimate.amount)&&estimate.amount!>0;
- return <span className="inline-flex items-center gap-1 text-xs" title={`${status} based on ${label} compared with the asking price`}><span className={`rounded px-2 py-1 ${colors[status]}`}>{label} {available?money(estimate!.amount):'—'}</span><strong className={`rounded border-2 border-black px-2 py-0.5 ${colors[status]}`}>{status}</strong></span>;
+ const updating=available&&estimate?.refreshing===true;
+ return <span className="inline-flex items-center gap-1 text-xs" title={updating?`Showing the last ${label} while the updated estimate is calculated. ${status} compares the asking price with that last estimate.`:`${status} based on ${label} compared with the asking price`}><span className={`rounded px-2 py-1 ${colors[status]}`}>{label} {available?money(estimate!.amount):'—'}{updating&&<span className="ml-1 font-normal">· Updating</span>}</span><strong className={`rounded border-2 border-black px-2 py-0.5 ${colors[status]}`}>{status}</strong></span>;
 }
 export default function FinderListings(){
  const [page,setPage]=useState<Page|null>(null),[offset,setOffset]=useState(0),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
