@@ -5,10 +5,11 @@ import styles from './FinderListings.module.css';
 import {finderMileageLabel} from '@/lib/finder-mileage.mjs';
 import {finderPriceStatus} from '@/lib/finder-price-status.mjs';
 import {finderTimeAgo} from '@/lib/finder-time.mjs';
+import {createFinderLiveState} from '@/lib/finder-live.mjs';
 
 type Estimate={amount?:number;status?:string;refreshing?:boolean};
 type Car={id:string;title:string;price?:number;priceCurrency?:string;year?:number;mileage?:number;location?:string;imageUrl?:string;url?:string;postedAt?:string;discoveredAt?:string;reviewCategory?:string;otherSellers?:boolean;publicDescription?:string;detailCoverage?:{mileage?:string;description?:string};valuationEvidence?:{mileage?:{status?:string;valueKm?:number|null}};priceEstimate?:Estimate;oldPriceEstimate?:Estimate};
-type Page={items:Car[];total:number;nextOffset:number|null;generatedAt:string};
+type Page={items:Car[];total:number;nextOffset:number|null;generatedAt:string;changeCursor?:number};
 type View='grid'|'list';
 const VIEW_STORAGE_KEY='carflex-finder-view';
 const money=(value?:number)=>value==null?'Price not listed':new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0}).format(value);
@@ -24,14 +25,41 @@ export default function FinderListings(){
  const [page,setPage]=useState<Page|null>(null),[offset,setOffset]=useState(0),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const [view,setView]=useState<View>('grid');
  const [now,setNow]=useState(()=>Date.now());
+ const [live,setLive]=useState(false);
  const resultsRef=useRef<HTMLDivElement>(null);
  const loadedOffset=useRef<number|null>(null);
  const requestInFlight=useRef(false),nextRefreshAt=useRef(0);
  const scrollAnchor=useRef<{id:string;top:number;scroller:HTMLElement}|null>(null);
+ const liveState=useRef<ReturnType<typeof createFinderLiveState>|null>(null),connectLive=useRef<()=>void>(()=>{}),revoked=useRef(false);
+ const showPage=(data:Page)=>{
+  scrollAnchor.current=null;
+  const results=resultsRef.current,scroller=results?.closest('main');
+  if(loadedOffset.current===offset&&results&&scroller&&results.getBoundingClientRect().top<scroller.getBoundingClientRect().top){
+   const bounds=scroller.getBoundingClientRect(),nextIds=new Set(data.items.map(car=>car.id));
+   const visible=Array.from(results.querySelectorAll<HTMLElement>('[data-car-id]')).find(card=>nextIds.has(card.dataset.carId||'')&&card.getBoundingClientRect().bottom>bounds.top&&card.getBoundingClientRect().top<bounds.bottom);
+   if(visible)scrollAnchor.current={id:visible.dataset.carId!,top:visible.getBoundingClientRect().top,scroller};
+  }
+  loadedOffset.current=offset;setPage(data);
+ };
+ useEffect(()=>{
+  let stream:EventSource|null=null,closed=false;
+  const state=createFinderLiveState({offset,onChange:showPage,onReconcile:()=>setRevision(n=>n+1)});liveState.current=state;setLive(false);
+  connectLive.current=()=>{
+   if(closed||stream||revoked.current||typeof EventSource!=='function')return;
+   stream=new EventSource(`/api/finder/stream?cursor=${state.getCursor()}`);
+   stream.addEventListener('open',()=>{if(!closed)setLive(true);});
+   stream.addEventListener('error',()=>{if(!closed)setLive(false);});
+   stream.addEventListener('change',event=>{if(closed||revoked.current)return;try{state.change(Number(event.lastEventId),JSON.parse(event.data));}catch{setRevision(n=>n+1);}});
+   stream.addEventListener('reset',()=>{stream?.close();stream=null;setLive(false);setRevision(n=>n+1);});
+   stream.addEventListener('access-revoked',()=>{revoked.current=true;state.close();stream?.close();stream=null;setLive(false);setPage(null);setError('Your session ended. Please sign in again.');});
+  };
+  return()=>{closed=true;state.close();stream?.close();if(liveState.current===state)liveState.current=null;connectLive.current=()=>{};};
+ },[offset]);
  useEffect(()=>{try{const saved=localStorage.getItem(VIEW_STORAGE_KEY);if(saved==='grid'||saved==='list')setView(saved);}catch{/* The view still works when browser storage is unavailable. */}},[]);
  const changeView=(next:View)=>{setView(next);try{localStorage.setItem(VIEW_STORAGE_KEY,next);}catch{/* Keep the current selection for this visit. */}};
  useEffect(()=>{
-  const abort=new AbortController();requestInFlight.current=true;nextRefreshAt.current=performance.now()+1000;setLoading(true);setError('');
+  if(revoked.current)return;
+  const abort=new AbortController();requestInFlight.current=true;nextRefreshAt.current=performance.now()+30000;setLoading(true);setError('');
   // Only a different page needs an empty loading state. Refreshes keep the
   // keyed cards mounted, including their images and expanded descriptions.
   if(loadedOffset.current!==offset)setPage(null);
@@ -39,20 +67,14 @@ export default function FinderListings(){
    const data=await response.json();
    if(abort.signal.aborted)return;
    if(!response.ok){
-    if(response.status===401||response.status===403){setPage(null);loadedOffset.current=null;}
+    if(response.status===401||response.status===403){revoked.current=true;liveState.current?.close();setPage(null);loadedOffset.current=null;}
     throw Error(data.error||'Finder could not load cars.');
    }
    return data as Page;
   }).then(data=>{
    if(abort.signal.aborted||!data)return;
-   scrollAnchor.current=null;
-   const results=resultsRef.current,scroller=results?.closest('main');
-   if(loadedOffset.current===offset&&results&&scroller&&results.getBoundingClientRect().top<scroller.getBoundingClientRect().top){
-    const bounds=scroller.getBoundingClientRect(),nextIds=new Set(data.items.map(car=>car.id));
-    const visible=Array.from(results.querySelectorAll<HTMLElement>('[data-car-id]')).find(card=>nextIds.has(card.dataset.carId||'')&&card.getBoundingClientRect().bottom>bounds.top&&card.getBoundingClientRect().top<bounds.bottom);
-    if(visible)scrollAnchor.current={id:visible.dataset.carId!,top:visible.getBoundingClientRect().top,scroller};
-   }
-   loadedOffset.current=offset;setPage(data);
+   liveState.current?.snapshot(data);
+   if(Number.isSafeInteger(data.changeCursor))connectLive.current();
   }).catch(reason=>{if(!abort.signal.aborted)setError(reason.message||'Finder could not load cars.');}).finally(()=>{if(!abort.signal.aborted){requestInFlight.current=false;setLoading(false);}});
   return()=>{abort.abort();requestInFlight.current=false;};
  },[offset,revision]);
@@ -69,14 +91,14 @@ export default function FinderListings(){
   }
  },[page]);
  useEffect(()=>{
-  if(loading||requestInFlight.current)return;
-  // Count the request time toward the one-second cadence. A slow response
-  // finishes before the next check starts; missed checks never build a queue.
-  const refresh=()=>{if(document.visibilityState==='visible'&&!requestInFlight.current){requestInFlight.current=true;setRevision(n=>n+1);}};
-  const timer=setTimeout(refresh,error?10000:Math.max(0,nextRefreshAt.current-performance.now()));
+  if(loading||requestInFlight.current||revoked.current)return;
+  // Live events update individual cars. Snapshots reconcile ordering/counts
+  // every 30 seconds; interrupted streams fall back to bounded polling.
+  const refresh=()=>{if(document.visibilityState==='visible'&&!requestInFlight.current&&!revoked.current){requestInFlight.current=true;setRevision(n=>n+1);}};
+  const timer=setTimeout(refresh,error?10000:live?Math.max(0,nextRefreshAt.current-performance.now()):3000);
   document.addEventListener('visibilitychange',refresh);
   return()=>{clearTimeout(timer);document.removeEventListener('visibilitychange',refresh);};
- },[loading,offset,revision,error]);
+ },[loading,offset,revision,error,live]);
  useEffect(()=>{const tick=()=>setNow(Date.now()),timer=setInterval(()=>{if(document.visibilityState==='visible')tick();},1000);document.addEventListener('visibilitychange',tick);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',tick);};},[]);
  return <section className={`${styles.finder} mx-auto w-full max-w-7xl px-4 py-6 md:px-7`}>
   <header className="mb-5">

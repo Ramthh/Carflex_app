@@ -1,5 +1,5 @@
 import PageShell from "@/components/PageShell/PageShell";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth-options";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getToken } from "next-auth/jwt";
