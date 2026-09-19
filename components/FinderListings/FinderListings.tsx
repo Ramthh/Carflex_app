@@ -62,6 +62,15 @@ export default function FinderListings(){
     <button type="button" onClick={refresh} disabled={loading} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={16} className={loading?'animate-spin':''}/>Refresh</button>
    </div>
    </div>
+   <form role="search" aria-label="Search Finder cars" className="mt-5" onSubmit={event=>{event.preventDefault();submitSearch();}}>
+    <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 focus-within:border-teal-700 focus-within:ring-2 focus-within:ring-teal-100">
+     <Search size={18} className="shrink-0 text-slate-400" aria-hidden="true"/>
+     <label htmlFor="finder-search" className="shrink-0 text-sm font-medium text-slate-700">Search cars</label>
+     <input id="finder-search" type="search" value={searchText} onChange={event=>changeSearch(event.target.value)} maxLength={200} placeholder="Make, model, year, or location" aria-describedby="finder-search-help" aria-controls="finder-results" disabled={filterId===undefined} className="min-w-0 flex-1 bg-transparent py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-60"/>
+     {searchText&&<button type="button" onClick={clearSearch} className="shrink-0 rounded px-2 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50" aria-label="Clear car search">Clear</button>}
+    </div>
+    <p id="finder-search-help" className="sr-only">Search within the selected saved filter. Results update as you type.</p>
+   </form>
    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
     <label htmlFor="finder-saved-filter" className="font-medium text-slate-700">Saved filter</label>
     <select id="finder-saved-filter" value={filterId??'__loading'} disabled={!catalog} onChange={event=>chooseFilter(event.target.value)} className="max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 disabled:opacity-60">
@@ -73,15 +82,6 @@ export default function FinderListings(){
     {filtersError&&<span role="alert" className="text-red-700">{filtersError} <button type="button" onClick={retryFilters} className="underline">Try again</button></span>}
    </div>
   </header>
-  <form role="search" aria-label="Search Finder cars" className="mb-5" onSubmit={event=>{event.preventDefault();submitSearch();}}>
-   <label htmlFor="finder-search" className="mb-2 block text-sm font-medium text-slate-700">Search cars</label>
-   <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 focus-within:border-teal-700 focus-within:ring-2 focus-within:ring-teal-100">
-    <Search size={18} className="shrink-0 text-slate-400" aria-hidden="true"/>
-    <input id="finder-search" type="search" value={searchText} onChange={event=>changeSearch(event.target.value)} maxLength={200} placeholder="Make, model, year, or location" aria-describedby="finder-search-help" aria-controls="finder-results" disabled={filterId===undefined} className="min-w-0 flex-1 bg-transparent py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-60"/>
-    {searchText&&<button type="button" onClick={clearSearch} className="shrink-0 rounded px-2 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50" aria-label="Clear car search">Clear</button>}
-   </div>
-   <p id="finder-search-help" className="sr-only">Search within the selected saved filter. Results update as you type.</p>
-  </form>
   <p className="mb-5 text-sm text-slate-500">New Est. and Old Est. each have their own deal label. Cars appear as soon as they are discovered; details update as they are collected.</p>
   {error&&<div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error} <button type="button" className="ml-2 underline" onClick={refresh}>Try again</button></div>}
   {loading&&!page&&filterId!==undefined&&<div role="status" className="py-12 text-center text-slate-500">Loading Finder cars…</div>}
