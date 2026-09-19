@@ -2,7 +2,7 @@
 
 Finder now has a Search cars field above the estimate explanation. Search matches make, model, year and location text across the full selected inventory, with every typed word required. A saved filter remains active, including any search already saved inside it.
 
-Layout follow-up: search appears before Saved filter. Its visible, associated Search cars label sits inside the input border before the make/model/year/location hint, instead of above the field. Search behavior is unchanged.
+Layout follow-up: the search field is capped at 32rem, with Saved filter beside it when space allows and wrapped below on smaller screens. Its visible, associated Search cars label sits inside the input border before the make/model/year/location hint. Search behavior is unchanged.
 
 Typing searches after a 350 ms pause; Enter searches immediately and Clear restores the selected filter. Changing the search returns to page one. The URL preserves both the saved filter and the search. Requests, cache entries and live streams include the query, and outdated work is cancelled when it changes.
 
