@@ -1,0 +1,3 @@
+export type Estimate={amount?:number;status?:string;refreshing?:boolean};
+export type Car={id:string;title:string;price?:number;priceCurrency?:string;year?:number;mileage?:number;location?:string;imageUrl?:string;url?:string;postedAt?:string;discoveredAt?:string;reviewCategory?:string;otherSellers?:boolean;publicDescription?:string;detailCoverage?:{mileage?:string;description?:string};valuationEvidence?:{mileage?:{status?:string;valueKm?:number|null}};priceEstimate?:Estimate;oldPriceEstimate?:Estimate};
+export type Page={items:Car[];total:number;offset?:number;nextOffset:number|null;generatedAt:string;changeCursor?:number;countPending?:boolean;sort?:string;selectedFilter?:{id:string;name:string;sort:string}|null};
