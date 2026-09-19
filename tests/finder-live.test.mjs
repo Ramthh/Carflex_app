@@ -27,6 +27,6 @@ test('a car that no longer matches disappears; private payloads and replay gaps 
  let value,reconciles=0;const state=createFinderLiveState({maxEvents:1,onChange:next=>value=next,onReconcile:()=>reconciles++});state.snapshot(page([car('01')],1));
  assert.equal(state.change(2,change(car('02',{privateImport:true}),'discovery')),false);
  state.change(2,{listingId:'01',kind:'update',item:null});assert.equal(value.items.length,0);
- state.change(3,change(car('03'),'discovery'));state.snapshot(page([car('01')],1));assert.equal(reconciles,1);assert.equal(value.items[0].id,'03');
+ state.change(3,change(car('03'),'discovery'));state.snapshot(page([car('01')],1));assert.equal(reconciles,2,'the visible hole and expired journal each request reconciliation');assert.equal(value.items[0].id,'03');
  state.close();assert.equal(state.change(4,change(car('04'),'discovery')),false);
 });

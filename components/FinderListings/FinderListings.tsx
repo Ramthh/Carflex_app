@@ -5,11 +5,11 @@ import styles from './FinderListings.module.css';
 import {finderMileageLabel} from '@/lib/finder-mileage.mjs';
 import {finderPriceStatus} from '@/lib/finder-price-status.mjs';
 import {finderTimeAgo} from '@/lib/finder-time.mjs';
-import {createFinderLiveState} from '@/lib/finder-live.mjs';
+import {useFinderFeed} from './useFinderFeed';
 
 type Estimate={amount?:number;status?:string;refreshing?:boolean};
 type Car={id:string;title:string;price?:number;priceCurrency?:string;year?:number;mileage?:number;location?:string;imageUrl?:string;url?:string;postedAt?:string;discoveredAt?:string;reviewCategory?:string;otherSellers?:boolean;publicDescription?:string;detailCoverage?:{mileage?:string;description?:string};valuationEvidence?:{mileage?:{status?:string;valueKm?:number|null}};priceEstimate?:Estimate;oldPriceEstimate?:Estimate};
-type Page={items:Car[];total:number;nextOffset:number|null;generatedAt:string;changeCursor?:number};
+type Page={items:Car[];total:number;nextOffset:number|null;generatedAt:string;changeCursor?:number;countPending?:boolean;sort?:string;selectedFilter?:{id:string;name:string;sort:string}|null};
 type View='grid'|'list';
 const VIEW_STORAGE_KEY='carflex-finder-view';
 const money=(value?:number)=>value==null?'Price not listed':new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0}).format(value);
@@ -22,62 +22,20 @@ function EstimateBadge({label,estimate,ask}:{label:string;estimate?:Estimate;ask
  return <span className="inline-flex items-center gap-1 text-xs" title={updating?`Showing the last ${label} while the updated estimate is calculated. ${status} compares the asking price with that last estimate.`:`${status} based on ${label} compared with the asking price`}><span className={`rounded px-2 py-1 ${colors[status]}`}>{label} {available?money(estimate!.amount):'—'}{updating&&<span className="ml-1 font-normal">· Updating</span>}</span><strong className={`rounded border-2 border-black px-2 py-0.5 ${colors[status]}`}>{status}</strong></span>;
 }
 export default function FinderListings(){
- const [page,setPage]=useState<Page|null>(null),[offset,setOffset]=useState(0),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
- const [view,setView]=useState<View>('grid');
- const [now,setNow]=useState(()=>Date.now());
- const [live,setLive]=useState(false);
- const resultsRef=useRef<HTMLDivElement>(null);
- const loadedOffset=useRef<number|null>(null);
- const requestInFlight=useRef(false),nextRefreshAt=useRef(0);
- const scrollAnchor=useRef<{id:string;top:number;scroller:HTMLElement}|null>(null);
- const liveState=useRef<ReturnType<typeof createFinderLiveState>|null>(null),connectLive=useRef<()=>void>(()=>{}),revoked=useRef(false);
- const showPage=(data:Page)=>{
-  scrollAnchor.current=null;
+ const [view,setView]=useState<View>('grid'),[now,setNow]=useState(()=>Date.now());
+ const resultsRef=useRef<HTMLDivElement>(null),scrollAnchor=useRef<{id:string;top:number;scroller:HTMLElement}|null>(null);
+ const beforePage=(data:Page|null)=>{
+  scrollAnchor.current=null;if(!data)return;
   const results=resultsRef.current,scroller=results?.closest('main');
-  if(loadedOffset.current===offset&&results&&scroller&&results.getBoundingClientRect().top<scroller.getBoundingClientRect().top){
+  if(results&&scroller&&results.getBoundingClientRect().top<scroller.getBoundingClientRect().top){
    const bounds=scroller.getBoundingClientRect(),nextIds=new Set(data.items.map(car=>car.id));
    const visible=Array.from(results.querySelectorAll<HTMLElement>('[data-car-id]')).find(card=>nextIds.has(card.dataset.carId||'')&&card.getBoundingClientRect().bottom>bounds.top&&card.getBoundingClientRect().top<bounds.bottom);
    if(visible)scrollAnchor.current={id:visible.dataset.carId!,top:visible.getBoundingClientRect().top,scroller};
   }
-  loadedOffset.current=offset;setPage(data);
  };
- useEffect(()=>{
-  let stream:EventSource|null=null,closed=false;
-  const state=createFinderLiveState({offset,onChange:showPage,onReconcile:()=>setRevision(n=>n+1)});liveState.current=state;setLive(false);
-  connectLive.current=()=>{
-   if(closed||stream||revoked.current||typeof EventSource!=='function')return;
-   stream=new EventSource(`/api/finder/stream?cursor=${state.getCursor()}`);
-   stream.addEventListener('open',()=>{if(!closed)setLive(true);});
-   stream.addEventListener('error',()=>{if(!closed)setLive(false);});
-   stream.addEventListener('change',event=>{if(closed||revoked.current)return;try{state.change(Number(event.lastEventId),JSON.parse(event.data));}catch{setRevision(n=>n+1);}});
-   stream.addEventListener('reset',()=>{stream?.close();stream=null;setLive(false);setRevision(n=>n+1);});
-   stream.addEventListener('access-revoked',()=>{revoked.current=true;state.close();stream?.close();stream=null;setLive(false);setPage(null);setError('Your session ended. Please sign in again.');});
-  };
-  return()=>{closed=true;state.close();stream?.close();if(liveState.current===state)liveState.current=null;connectLive.current=()=>{};};
- },[offset]);
+ const {page,offset,setOffset,loading,error,refresh,catalog,filtersLoading,filtersError,filterId,chooseFilter,retryFilters}=useFinderFeed<Page>({beforePage});
  useEffect(()=>{try{const saved=localStorage.getItem(VIEW_STORAGE_KEY);if(saved==='grid'||saved==='list')setView(saved);}catch{/* The view still works when browser storage is unavailable. */}},[]);
  const changeView=(next:View)=>{setView(next);try{localStorage.setItem(VIEW_STORAGE_KEY,next);}catch{/* Keep the current selection for this visit. */}};
- useEffect(()=>{
-  if(revoked.current)return;
-  const abort=new AbortController();requestInFlight.current=true;nextRefreshAt.current=performance.now()+30000;setLoading(true);setError('');
-  // Only a different page needs an empty loading state. Refreshes keep the
-  // keyed cards mounted, including their images and expanded descriptions.
-  if(loadedOffset.current!==offset)setPage(null);
-  fetch(`/api/finder?offset=${offset}`,{cache:'no-store',signal:abort.signal}).then(async response=>{
-   const data=await response.json();
-   if(abort.signal.aborted)return;
-   if(!response.ok){
-    if(response.status===401||response.status===403){revoked.current=true;liveState.current?.close();setPage(null);loadedOffset.current=null;}
-    throw Error(data.error||'Finder could not load cars.');
-   }
-   return data as Page;
-  }).then(data=>{
-   if(abort.signal.aborted||!data)return;
-   liveState.current?.snapshot(data);
-   if(Number.isSafeInteger(data.changeCursor))connectLive.current();
-  }).catch(reason=>{if(!abort.signal.aborted)setError(reason.message||'Finder could not load cars.');}).finally(()=>{if(!abort.signal.aborted){requestInFlight.current=false;setLoading(false);}});
-  return()=>{abort.abort();requestInFlight.current=false;};
- },[offset,revision]);
  useLayoutEffect(()=>{
   const anchor=scrollAnchor.current;scrollAnchor.current=null;
   if(!anchor)return;
@@ -90,15 +48,7 @@ export default function FinderListings(){
    return()=>cancelAnimationFrame(frame);
   }
  },[page]);
- useEffect(()=>{
-  if(loading||requestInFlight.current||revoked.current)return;
-  // Live events update individual cars. Snapshots reconcile ordering/counts
-  // every 30 seconds; interrupted streams fall back to bounded polling.
-  const refresh=()=>{if(document.visibilityState==='visible'&&!requestInFlight.current&&!revoked.current){requestInFlight.current=true;setRevision(n=>n+1);}};
-  const timer=setTimeout(refresh,error?10000:live?Math.max(0,nextRefreshAt.current-performance.now()):3000);
-  document.addEventListener('visibilitychange',refresh);
-  return()=>{clearTimeout(timer);document.removeEventListener('visibilitychange',refresh);};
- },[loading,offset,revision,error,live]);
+
  useEffect(()=>{const tick=()=>setNow(Date.now()),timer=setInterval(()=>{if(document.visibilityState==='visible')tick();},1000);document.addEventListener('visibilitychange',tick);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',tick);};},[]);
  return <section className={`${styles.finder} mx-auto w-full max-w-7xl px-4 py-6 md:px-7`}>
   <header className="mb-5">
@@ -109,15 +59,24 @@ export default function FinderListings(){
      <button type="button" aria-label="Grid view" aria-pressed={view==='grid'} aria-controls="finder-results" onClick={()=>changeView('grid')} className={styles.viewButton}><LayoutGrid size={16} aria-hidden="true"/>Grid</button>
      <button type="button" aria-label="List view" aria-pressed={view==='list'} aria-controls="finder-results" onClick={()=>changeView('list')} className={styles.viewButton}><List size={16} aria-hidden="true"/>List</button>
     </div>
-    <button type="button" onClick={()=>setRevision(n=>n+1)} disabled={loading} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={16} className={loading?'animate-spin':''}/>Refresh</button>
+    <button type="button" onClick={refresh} disabled={loading} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={16} className={loading?'animate-spin':''}/>Refresh</button>
    </div>
    </div>
-   <p className="mt-2 text-sm text-slate-500">All public Facebook cars · All seller categories · All posting dates</p>
+   <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+    <label htmlFor="finder-saved-filter" className="font-medium text-slate-700">Saved filter</label>
+    <select id="finder-saved-filter" value={filterId??'__loading'} disabled={!catalog} onChange={event=>chooseFilter(event.target.value)} className="max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 disabled:opacity-60">
+     {filterId===undefined&&<option value="__loading">{filtersLoading?'Loading saved filters…':'Choose a saved filter'}</option>}
+     <option value="">All Facebook cars</option>
+     {filterId&&catalog&&!catalog.items.some(item=>item.id===filterId)&&<option value={filterId}>Saved filter unavailable</option>}
+     {catalog?.items.map(item=><option key={item.id} value={item.id} disabled={!item.available}>{item.name}{!item.available?' (Unavailable)':''}</option>)}
+    </select>
+    {filtersError&&<span role="alert" className="text-red-700">{filtersError} <button type="button" onClick={retryFilters} className="underline">Try again</button></span>}
+   </div>
   </header>
   <p className="mb-5 text-sm text-slate-500">New Est. and Old Est. each have their own deal label. Cars appear as soon as they are discovered; details update as they are collected.</p>
-  {error&&<div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error} <button type="button" className="ml-2 underline" onClick={()=>setRevision(n=>n+1)}>Try again</button></div>}
-  {loading&&!page&&<div role="status" className="py-12 text-center text-slate-500">Loading Finder cars…</div>}
-  {page&&<><div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500"><span>{page.total.toLocaleString('en-CA')} cars</span><span>Newest posted first</span></div>
+  {error&&<div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error} <button type="button" className="ml-2 underline" onClick={refresh}>Try again</button></div>}
+  {loading&&!page&&filterId!==undefined&&<div role="status" className="py-12 text-center text-slate-500">Loading Finder cars…</div>}
+  {page&&<><div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500"><span>{page.total.toLocaleString('en-CA')} cars{page.countPending&&<span> · Updating count</span>}</span><span>{({posted:'Newest posted first',newest:'Newest discovered first',price:'Lowest price first','price-high':'Highest price first',mileage:'Lowest mileage first'} as Record<string,string>)[page.sort||page.selectedFilter?.sort||'posted']}</span></div>
    {!page.items.length?<div id="finder-results" className="rounded-xl border border-slate-200 p-12 text-center text-slate-500"><Search className="mx-auto mb-3"/>No matching cars right now.</div>:<div ref={resultsRef} id="finder-results" data-view={view} className={view==='list'?styles.list:'grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-3'}>
     {page.items.map(car=><article key={car.id} data-car-id={car.id} className={`${styles.card} overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm`}>
      <div className={`${styles.photo} relative aspect-[16/9] bg-slate-100`}>{safeLink(car.imageUrl)?<img src={safeLink(car.imageUrl)} alt={car.title} loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-cover"/>:<div className="flex h-full items-center justify-center text-slate-400">Photo unavailable</div>}<span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-xs text-slate-700"><Facebook size={13} className="shrink-0 text-blue-600" aria-hidden="true"/>Facebook</span>{safeLink(car.url)&&<a href={safeLink(car.url)} target="_blank" rel="noopener noreferrer" className={styles.photoLink} aria-label={`View ${car.title} on Facebook (opens in a new tab)`} title="View ad on Facebook (opens in a new tab)"/>}</div>
