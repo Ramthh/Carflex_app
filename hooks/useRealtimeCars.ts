@@ -9,6 +9,7 @@ import priceStatus from "@/helpers/priceStatus";
 // fetcher function for SWR
 const fetcher = async ({ name, limit }: { name: string; limit?: number }) => {
   const res = await fetch(`/api/${name}Cars?limit=${limit || 20}`);
+  if (!res.ok) throw new Error('Listing access is unavailable');
   const data = await res.json();
   return data;
 };
@@ -17,6 +18,7 @@ export default function useRealtimeCars(
   active: string,
   limit = 20,
   initialData: any[],
+  managed = false,
 ) {
   const tableName = active.toLowerCase();
 
@@ -26,11 +28,12 @@ export default function useRealtimeCars(
     {
       fallbackData: { items: initialData },
       revalidateOnFocus: true,
+      refreshInterval: managed ? 5000 : 0,
     },
   );
 
   useEffect(() => {
-    if (!tableName) return;
+    if (!tableName || managed) return;
     const currentMonth = new Date().getMonth() + 1; // 1 = Jan, 4 = Apr
     const year = new Date().getFullYear();
     let newTableName = "";
@@ -91,7 +94,7 @@ export default function useRealtimeCars(
       supabase.removeChannel(insertSubscription);
       supabase.removeChannel(broadcastSubscription);
     };
-  }, [mutate, tableName]);
+  }, [mutate, tableName, managed]);
 
   return { data, error, isLoading };
 }

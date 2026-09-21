@@ -18,7 +18,8 @@ import { mutate } from "swr";
 import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
 import priceStatus from "@/helpers/priceStatus";
 import formatNumber from "@/helpers/formatNumber";
-export default function CarCard({ carDetails }: { carDetails: any }) {
+export default function CarCard({ carDetails, session }: { carDetails: any; session?: any }) {
+  const managed = session?.user?.identityKind === 'workspace';
   const [trimStatus, setTrimStatus] = useState<{
     status: boolean;
     value: string;
@@ -148,6 +149,7 @@ export default function CarCard({ carDetails }: { carDetails: any }) {
               carDetails={carDetails}
               status={status}
               estimatedValue={estimatedValue}
+              session={session}
             />
           </div>
           <p className="text-gray-500 flex items-center gap-0.5">
@@ -201,7 +203,7 @@ export default function CarCard({ carDetails }: { carDetails: any }) {
                   }
                 }}
               />
-              <button className="ml-2 cursor-pointer">
+              {!managed && <button className="ml-2 cursor-pointer">
                 {loading ? (
                   <LoadingSpinner size={4} />
                 ) : editMode ? (
@@ -221,7 +223,7 @@ export default function CarCard({ carDetails }: { carDetails: any }) {
                     }}
                   />
                 )}
-              </button>
+              </button>}
             </p>
           </div>
           {carDetails.is_sus !== null ? (
