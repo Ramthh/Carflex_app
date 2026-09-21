@@ -1,5 +1,8 @@
 # Radar workspace accounts
 
+The final production deployment and verification receipt is recorded in
+[WORKSPACE-ACCOUNTS-ROLLOUT.md](WORKSPACE-ACCOUNTS-ROLLOUT.md).
+
 ## Baseline and deployment target
 
 This isolated checkout starts at `e35294d6916fc070b091d4ce88d36e3f6200eb88`
