@@ -39,6 +39,7 @@ export default function CarList({
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string>(carDetails.status);
   const role = session?.user?.role;
+  const managed = session?.user?.identityKind === 'workspace';
   useEffect(() => {
     if (carDetails.is_taken) {
       setIsTaken(true);
@@ -270,7 +271,7 @@ export default function CarList({
                   }
                 }}
               />
-              <button className="ml-2 cursor-pointer">
+              {!managed && <button className="ml-2 cursor-pointer">
                 {loading ? (
                   <LoadingSpinner size={4} />
                 ) : editMode ? (
@@ -290,7 +291,7 @@ export default function CarList({
                     }}
                   />
                 )}
-              </button>
+              </button>}
             </p>
           </div>
 

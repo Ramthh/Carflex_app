@@ -7,6 +7,7 @@ import { SessionProvider } from "next-auth/react";
 import { BotMessageSquare } from "lucide-react";
 import Chatbot from "../Chatbot/Chatbot";
 import TimeTracker from "../TimeTracker/TimeTracker";
+import WorkspaceSessionBoundary from './WorkspaceSessionBoundary';
 
 export default function PageShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,7 +27,8 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={15} refetchOnWindowFocus>
+      <WorkspaceSessionBoundary>
       <TimeTracker />
       <div className="flex h-screen">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
@@ -51,6 +53,7 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </div>
+      </WorkspaceSessionBoundary>
     </SessionProvider>
   );
 }

@@ -34,6 +34,16 @@ export default function CopyToClipboardButton({
       e.stopPropagation();
       setIsLoading(true);
 
+      if (session?.user?.identityKind === 'workspace') {
+        await copy(carDetails.ad_link +
+          (status && status !== 'Unknown' ? `\n${status.toUpperCase()}` : '') +
+          (estimatedValue != null ? `\nEstimated Value: $${estimatedValue}` : '') +
+          '\nGenerated using Carflex App');
+        setIsCopied(true);
+        setIsLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/cars/send", {
         method: "POST",
         headers: {
@@ -83,6 +93,7 @@ export default function CopyToClipboardButton({
   return (
     <>
       <button
+        aria-label="Copy listing"
         className="border border-primary p-1 rounded-md text-sm text-primary hover:bg-primary hover:text-white transition-colors duration-300 cursor-pointer"
         onClick={handleCopyClick}
       >

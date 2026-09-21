@@ -1,5 +1,4 @@
 // lib/auth.ts
-import { getToken } from "next-auth/jwt";
 import db from "@/lib/db.postgres";
 
 export async function validateToken(userId?: number, tokenVersion?: number) {
@@ -10,9 +9,9 @@ export async function validateToken(userId?: number, tokenVersion?: number) {
     'SELECT token_version FROM "User" WHERE id = $1',
     [userId],
   );
-  const currentVersion = result.rows[0]?.token_version || 0;
+  const currentVersion = result.rows[0]?.token_version ?? 0;
 
-  if (tokenVersion !== currentVersion) {
+  if (!result.rows[0] || tokenVersion !== currentVersion) {
     throw new Error("Token invalidated");
   }
 }

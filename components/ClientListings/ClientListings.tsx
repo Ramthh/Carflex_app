@@ -43,6 +43,7 @@ export default function ClientListings({
   limit?: number;
 }) {
   const { data: session } = useSession();
+  const managed = session?.user?.identityKind === 'workspace';
   const [view, setView] = useState<"card" | "list">("list");
   const SOURCES = ["facebook", "kijiji", "autotrader", "finder"];
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -84,6 +85,7 @@ export default function ClientListings({
     active,
     limit,
     initialCarsData,
+    managed,
   );
   function toggleSource(source: string) {
     setSelectedSources((prev) =>
@@ -114,7 +116,7 @@ export default function ClientListings({
   // console.log("Filtered items:", items);
   return (
     <>
-      {open && (
+      {open && !managed && (
         <Modal isOpen={open} onClose={() => setOpen(false)} title="Add Car">
           <AddCarForm
             onSuccess={() => setOpen(false)}
@@ -131,7 +133,7 @@ export default function ClientListings({
             {active} Listings
           </p>
 
-          <div className="flex items-center gap-4">
+          {!managed && <div className="flex items-center gap-4">
             {/* <AutoSwitch /> */}
             <button
               className="border border-primary text-sm hover:text-white transition-colors duration-300 bg-primary rounded-lg p-2 text-white hover:bg-lightPrimary cursor-pointer text-center"
@@ -143,7 +145,7 @@ export default function ClientListings({
 
             {/* <SelectView view={view} setView={setView} /> */}
             {/* <SearchVin /> */}
-          </div>
+          </div>}
         </div>
         {active === "All" && (
           <div role="group" aria-label="Filter by source" className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-5">
@@ -192,7 +194,7 @@ export default function ClientListings({
           </div>
         ) : (
           <div id="all-listings-results" ref={resultsRef} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-12">
-            {items.map(entry => entry.origin==='finder' ? <FinderCarCard key={entry.key} car={entry.item} now={now}/> : <CarCard key={entry.key} carDetails={entry.item}/>)}
+            {items.map(entry => entry.origin==='finder' ? <FinderCarCard key={entry.key} car={entry.item} now={now}/> : <CarCard key={entry.key} carDetails={entry.item} session={session}/>)}
           </div>
         )}
         {isAll && !items.length && !isLoading && !(finderEnabled && (finder.loading || finder.filtersLoading || finder.error || finder.filtersError)) && <p className="py-8 text-center text-slate-500">No cars match the selected sources right now.</p>}

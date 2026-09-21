@@ -30,7 +30,7 @@ export default function SignInPage() {
       redirect: false,
     });
     if (result?.error) {
-      setAuthError("Invalid email or password");
+      setAuthError("Unable to sign in. Check your username and password, or ask your administrator to confirm Radar access.");
       return;
     }
 
@@ -61,12 +61,12 @@ export default function SignInPage() {
           Sign in to your account
         </h1>
 
-        <form className="">
+        <form className="" onSubmit={handleSubmit(onSubmit)}>
           <div className=" space-y-3">
             <FormInput
-              label="Email"
-              type="email"
-              placeholder="Enter your email"
+              label="Username or email"
+              type="text"
+              placeholder="Enter your username or email"
               register={register("email")}
               error={errors.email}
             />
@@ -97,10 +97,8 @@ export default function SignInPage() {
           {/* Auth error */}
           {authError && <p className="text-sm text-red-500">{authError}</p>}
           <AuthButton
-            // type="submit"
             className="w-full bg-primary text-white py-2 rounded-lg hover:bg-lightPrimary transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSubmitting}
-            onClick={handleSubmit(onSubmit)}
           >
             {isSubmitting ? "Processing..." : "Sign in"}
           </AuthButton>
