@@ -75,8 +75,10 @@ ones that previously had no guard. Public exceptions are the existing auth
 routes, login/password-recovery screens and exact static assets. There is no
 customer lead-submission endpoint in this repository.
 
-Production's server-side lead adapter may use only `GET /api/offers` and
-`GET /api/offers/{positive numeric id}` with `Authorization: Bearer <token>`.
+Production's server-side lead adapter may use only `GET /api/offers` with
+`Authorization: Bearer <token>`. Its actual load and revalidation contract both
+use this fixed list endpoint. Individual UUID/numeric detail URLs receive no
+service-token exception; signed-in legacy users retain their ordinary access.
 The 64-hex secret in Radar's `RADAR_WEBSITE_LEADS_SERVICE_TOKEN` must match
 Production's `CARFLEX_WEBSITE_LEADS_TOKEN`. The comparison is timing-safe;
 other paths/methods, query tokens and cookies confer no service access.

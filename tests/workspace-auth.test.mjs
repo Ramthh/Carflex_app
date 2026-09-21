@@ -85,10 +85,9 @@ test('mapping, token version, deleted user and central expiry are mandatory; leg
   await assert.rejects(auth.validateRadarToken(managed(), { db: tokenDb(), now: () => time, inspect: async () => { throw Error('Offline'); } }));
 });
 
-test('server credential only grants exact offers GET paths and never other methods, headers or routes', () => {
+test('server credential only grants the exact offers list GET, never individual records or mutations', () => {
   assert.equal(auth.websiteLeadsServiceAccess('/api/offers', 'GET', `Bearer ${bearer}`, bearer), true);
-  assert.equal(auth.websiteLeadsServiceAccess('/api/offers/42', 'GET', `Bearer ${bearer}`, bearer), true);
-  for (const path of ['/api/offers/0', '/api/offers/42/more', '/api/offers/42.png', '/api/offers/../employeesDetails', '/api/allCars']) {
+  for (const path of ['/api/offers/42', `/api/offers/${subject}`, '/api/offers/0', '/api/offers/42/more', '/api/offers/42.png', '/api/offers/../employeesDetails', '/api/allCars']) {
     assert.equal(auth.websiteLeadsServiceAccess(path, 'GET', `Bearer ${bearer}`, bearer), false);
   }
   for (const method of ['POST', 'PUT', 'DELETE', 'HEAD']) assert.equal(auth.websiteLeadsServiceAccess('/api/offers/42', method, `Bearer ${bearer}`, bearer), false);
@@ -192,6 +191,8 @@ test('actual proxy fails closed for unauthenticated business routes and honors o
     assert.equal((await proxy(new NextRequest('https://radar.carflexplus.ca/api/offers'))).status, 401);
     assert.equal((await proxy(new NextRequest('https://radar.carflexplus.ca/api/offers?token=' + bearer))).status, 401);
     assert.equal((await proxy(new NextRequest('https://radar.carflexplus.ca/api/offers', { headers: { Authorization: `Bearer ${bearer}` } }))).status, 200);
+    assert.equal((await proxy(new NextRequest('https://radar.carflexplus.ca/api/offers/42', { headers: { Authorization: `Bearer ${bearer}` } }))).status, 401);
+    assert.equal((await proxy(new NextRequest(`https://radar.carflexplus.ca/api/offers/${subject}`, { headers: { Authorization: `Bearer ${bearer}` } }))).status, 401);
     assert.equal((await proxy(new NextRequest('https://radar.carflexplus.ca/api/offers/42', { method: 'PUT', headers: { Authorization: `Bearer ${bearer}` } }))).status, 401);
     const page = await proxy(new NextRequest('https://radar.carflexplus.ca/dashboard'));
     assert.equal(page.status, 307); assert.equal(page.headers.get('location'), 'https://radar.carflexplus.ca/login');
